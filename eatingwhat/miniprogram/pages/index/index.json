@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "决食-吃点啥",
+  "usingComponents": {
+    "cloud-tip-modal": "/components/cloudTipModal/index"
+  }
+}
