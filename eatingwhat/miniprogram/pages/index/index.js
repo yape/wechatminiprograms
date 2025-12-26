@@ -16,13 +16,19 @@ Page({
 
     lastResults: [], // 最近一次检索得到的列表
 
-    recentIds: [] // 用于限制连续3次不重复（记录最近2个已推荐ID）
+    recentIds: [], // 用于限制连续3次不重复（记录最近2个已推荐ID）
 
+    // 新增：导航栏相关数据
+    statusBarHeight: 20,
+    navBarHeight: 64
   },
 
 
 
   onLoad() {
+
+    // 获取系统信息，计算导航栏高度
+    this.getSystemInfo();
 
     // 从本地恢复用户上次配置（可选）
 
@@ -37,10 +43,61 @@ Page({
       if (types) this.setData({ types });
 
     } catch (e) {}
-
   },
 
-
+// 新增：获取系统信息
+getSystemInfo() {
+  // 方法1：使用 wx.getSystemInfo 异步获取
+  wx.getSystemInfo({
+    success: (res) => {
+      const { statusBarHeight, platform } = res;
+      let navBarHeight = 44; // 导航栏内容区域高度
+      
+      // 根据不同平台设置高度
+      if (platform === 'android') {
+        navBarHeight = 48;
+      }
+      
+      // 计算总高度
+      const totalNavHeight = statusBarHeight + navBarHeight;
+      
+      this.setData({
+        statusBarHeight: statusBarHeight,
+        navBarHeight: totalNavHeight
+      });
+      
+      console.log('系统信息:', {
+        statusBarHeight,
+        platform,
+        navBarHeight: totalNavHeight
+      });
+    },
+    fail: (err) => {
+      console.error('获取系统信息失败:', err);
+      // 设置默认值
+      this.setData({
+        statusBarHeight: 20,
+        navBarHeight: 64
+      });
+    }
+  });
+  
+  // 方法2：或者使用 wx.getWindowInfo（新API）
+  if (wx.getWindowInfo) {
+    try {
+      const windowInfo = wx.getWindowInfo();
+      const statusBarHeight = windowInfo.statusBarHeight || 20;
+      const navBarHeight = statusBarHeight + 44; // 44是导航栏内容区默认高度
+      
+      this.setData({
+        statusBarHeight: statusBarHeight,
+        navBarHeight: navBarHeight
+      });
+    } catch (e) {
+      console.error('使用getWindowInfo失败:', e);
+    }
+  }
+},
 
   onRadiusInput(e) {
 

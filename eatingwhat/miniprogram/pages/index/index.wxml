@@ -1,44 +1,110 @@
-<view class="hero">
+<view class="container">
+<!-- 自定义导航栏 -->
+<view class="custom-navbar" style="height: {{navBarHeight}}px; padding-top: {{statusBarHeight}}px;">
+    <view class="nav-title">今天吃点啥？</view>
+  </view>
 
-<view class="title">今天吃点啥？</view>
+  <!-- 头部区域 -->
+  <view class="hero">
+    <view class="title">今天吃点啥？</view>
+    <view class="subtitle">一键探索你附近的美味</view>
+    <view class="pulse" bindtap="onRecommend">
+      <text>开始推荐</text>
+    </view>
+  </view>
 
-<view class="subtitle">一键探索你附近的美味</view>
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading-section">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">正在寻找附近美食...</text>
+  </view>
 
-<view class="pulse" bindtap="onRecommend">
+  <!-- 错误提示 -->
+  <view wx:if="{{error && !loading}}" class="error-section">
+    <text>{{error}}</text>
+    <view class="retry-btn" bindtap="onRecommend">
+      重试
+    </view>
+  </view>
 
- <text>开始推荐</text>
+  <!-- 推荐结果卡片 - 修改：移除宽度限制，使用固定布局 -->
+  <view class="result-container" wx:if="{{result}}">
+    <view class="card">
+      <!-- 修改：店铺名称靠左展示 -->
+      <view class="card-header">
+        <view class="store-name">{{result.name}}</view>
+        <view class="tag">今日推荐</view>
+      </view>
+      
+      <view class="card-content">
+        <view class="row">
+          <text class="label">📍 距离</text>
+          <text class="distance-value">{{result._distanceText}}</text>
+        </view>
+        <view class="row">
+          <text class="label">🏠 地址</text>
+          <text class="address-value">{{result.address || result.adname || '地址未提供'}}</text>
+        </view>
+      </view>
+      
+      <view class="actions">
+        <view class="btn secondary" bindtap="onReshuffle">换一个</view>
+        <view class="btn primary" bindtap="onNavigate">去这里</view>
+      </view>
+    </view>
+  </view>
 
+  <!-- 未推荐时的占位内容 -->
+  <view wx:if="{{!result && !loading && !error}}" class="placeholder-section">
+    <!-- 骨架屏示例卡片 -->
+    <view class="placeholder-card">
+      <view class="placeholder-header">
+        <view class="placeholder-title"></view>
+        <view class="placeholder-tag"></view>
+      </view>
+      
+      <view class="placeholder-content">
+        <view class="placeholder-row">
+          <view class="placeholder-label"></view>
+          <view class="placeholder-value"></view>
+        </view>
+        <view class="placeholder-row">
+          <view class="placeholder-label"></view>
+          <view class="placeholder-value" style="width: 70%;"></view>
+        </view>
+      </view>
+      
+      <view class="placeholder-actions">
+        <view class="placeholder-btn"></view>
+        <view class="placeholder-btn"></view>
+      </view>
+    </view>
+
+    <!-- 引导性文案 -->
+    <view class="guide-content">
+      <image src="/images/food-illustration.png" class="guide-image"></image>
+      <view class="guide-text">
+        <text class="guide-title">探索附近美食</text>
+        <text class="guide-desc">点击上方按钮，根据你的位置推荐附近美食，支持多种餐饮类型筛选</text>
+      </view>
+      
+      <view class="features">
+        <view class="feature-item">
+          <view class="feature-icon">📍</view>
+          <text class="feature-text">基于距离智能推荐</text>
+        </view>
+        <view class="feature-item">
+          <view class="feature-icon">🔄</view>
+          <text class="feature-text">一键更换推荐</text>
+        </view>
+        <view class="feature-item">
+          <view class="feature-icon">🚗</view>
+          <text class="feature-text">一键导航前往</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 设置按钮 -->
+  <view class="fab" bindtap="onOpenSettings">⚙️</view>
 </view>
-
-</view>
-
-
-
-<view wx:if="{{loading}}" class="loading">加载中...</view>
-
-<view wx:if="{{error}}" class="error">{{error}}</view>
-
-
-
-<view class="card" wx:if="{{result}}">
-
-<view class="value">{{result.name}}</view>
-
-<view class="row"><text class="label">距离</text><text>{{result._distanceText}}</text></view>
-
-<view class="row"><text class="label">地址</text><text>{{result.address || result.adname || ''}}</text></view>
-
-<view class="actions" style="margin-top: 24rpx;">
-
- <view class="btn secondary" bindtap="onReshuffle">换一个</view>
-
- <view class="btn" bindtap="onNavigate">去这里</view>
-
-</view>
-
-</view>
-
-
-
-<view class="fab" bindtap="onOpenSettings">⚙️</view>
-
