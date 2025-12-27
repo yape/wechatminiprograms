@@ -2,6 +2,22 @@ const DIST_SCALE = 800; // 距离加权退火尺度，越小越偏向近处
 
 Page({
 
+  onShareAppMessage() {
+    return {
+      title: '决食-吃点啥?', // 分享标题
+      path: '/pages/index/index.html', // 分享路径，默认当前页面路径
+      imageUrl: '/images/share3.jpg' // 分享图片，支持本地和网络图片
+    }
+  },
+  // 分享到朋友圈（需单独配置）
+onShareTimeline() {
+  return {
+    title: '决食-吃点啥?',
+    query: 'id=123',
+    imageUrl: '/images/share2.jpg'
+  }
+},
+
   data: {
 
     radius: 1500,
