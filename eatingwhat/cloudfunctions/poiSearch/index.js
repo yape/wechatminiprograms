@@ -1,16 +1,11 @@
 // 云函数入口文件
-
 const cloud = require('wx-server-sdk')
 
 const https = require('https')
 
 const querystring = require('querystring')
 
-
-
 cloud.init()
-
-
 
 function requestAMap(params) {
 
@@ -43,16 +38,10 @@ function requestAMap(params) {
           }
 
         })
-
       })
-
       .on('error', (err) => reject(err))
-
   })
-
 }
-
-
 
 exports.main = async (event) => {
 
@@ -64,11 +53,7 @@ exports.main = async (event) => {
 
   }
 
-
-
-  const key = process.env.GAODE_KEY || 'XXXXX'
-
-
+  const key = process.env.GAODE_KEY
 
   const params = {
 
@@ -120,7 +105,13 @@ exports.main = async (event) => {
 
       business: p.type,
 
-      rating: p.biz_ext && p.biz_ext.rating ? Number(p.biz_ext.rating) : undefined
+      rating: p.biz_ext ? p.biz_ext.rating : null,
+
+      cost: p.biz_ext ? p.biz_ext.cost : null,
+
+      tag: p.tag,
+
+      typeName: p.typecode ? p.type : ''
 
     }))
 

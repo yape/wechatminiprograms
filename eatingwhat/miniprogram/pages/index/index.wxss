@@ -205,6 +205,41 @@
   -webkit-line-clamp: 3; /* 地址可以显示更多行 */
 }
 
+/* 评分样式 */
+.rating-value {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #fbbf24;
+  text-align: right;
+  margin-left: 20rpx;
+}
+
+/* 人均消费样式 */
+.cost-value {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #34d399;
+  text-align: right;
+  margin-left: 20rpx;
+}
+
+/* 特色标签样式 */
+.tag-value {
+  font-size: 26rpx;
+  font-weight: 500;
+  color: #a5b4fc;
+  text-align: right;
+  flex: 1;
+  margin-left: 20rpx;
+  word-break: break-all;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.4;
+}
+
 .actions { 
   display: flex; 
   gap: 16rpx; 

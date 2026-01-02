@@ -45,6 +45,18 @@
           <text class="label">🏠 地址</text>
           <text class="address-value">{{result.address || result.adname || '地址未提供'}}</text>
         </view>
+        <view class="row" wx:if="{{result.rating}}">
+          <text class="label">⭐ 评分</text>
+          <text class="rating-value">{{result.rating}}</text>
+        </view>
+        <view class="row" wx:if="{{result.cost && result.cost.length}}">
+          <text class="label">💰 人均</text>
+          <text class="cost-value">¥{{result.cost}}</text>
+        </view>
+        <view class="row" wx:if="{{result.tag && result.tag.length}}">
+          <text class="label">🏷️ 特色</text>
+          <text class="tag-value">{{result.tag}}</text>
+        </view>
       </view>
       
       <view class="actions">
