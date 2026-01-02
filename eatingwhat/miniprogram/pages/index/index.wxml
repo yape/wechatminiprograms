@@ -119,4 +119,87 @@
 
   <!-- 设置按钮 -->
   <view class="fab" bindtap="onOpenSettings">⚙️</view>
+
+  <!-- 侧边栏遮罩 -->
+  <view class="sidebar-mask {{showSettings ? 'show' : ''}}" bindtap="onCloseSettings"></view>
+
+  <!-- 侧边栏设置 -->
+  <view class="sidebar {{showSettings ? 'show' : ''}}">
+    <view class="sidebar-header" style="padding-top: {{statusBarHeight + 20}}px;">
+      <text class="sidebar-title">偏好设置</text>
+      <!-- <view class="sidebar-close" bindtap="onCloseSettings">✕</view> -->
+    </view>
+
+    <scroll-view class="sidebar-content" scroll-y>
+      <!-- 价格范围设置 -->
+      <view class="setting-item">
+        <view class="setting-label">
+          <text class="setting-icon">💰</text>
+          <text class="setting-text">人均价格</text>
+        </view>
+        <picker 
+          mode="selector" 
+          range="{{priceRanges}}" 
+          range-key="label"
+          value="{{selectedPriceIndex}}" 
+          bindchange="onPriceChange"
+        >
+          <view class="setting-value">
+            <text>{{priceRanges[selectedPriceIndex].label}}</text>
+            <text class="arrow">›</text>
+          </view>
+        </picker>
+      </view>
+
+      <!-- 搜索半径设置 -->
+      <view class="setting-item">
+        <view class="setting-label">
+          <text class="setting-icon">📍</text>
+          <text class="setting-text">搜索半径</text>
+        </view>
+        <view class="setting-input-wrap">
+          <input 
+            type="number" 
+            value="{{radius}}" 
+            bindblur="onRadiusChange"
+            class="setting-input"
+            placeholder="1500"
+          />
+          <text class="input-unit">米</text>
+        </view>
+      </view>
+
+      <!-- 餐饮类型设置 -->
+      <view class="setting-item">
+        <view class="setting-label">
+          <text class="setting-icon">🍜</text>
+          <text class="setting-text">餐饮类型</text>
+        </view>
+        <picker 
+          mode="selector" 
+          range="{{foodTypes}}" 
+          range-key="label"
+          value="{{selectedTypeIndex}}" 
+          bindchange="onTypeChange"
+        >
+          <view class="setting-value">
+            <text>{{foodTypes[selectedTypeIndex].label}}</text>
+            <text class="arrow">›</text>
+          </view>
+        </picker>
+      </view>
+    </scroll-view>
+
+    <!-- 说明信息固定在底部 -->
+    <view class="sidebar-footer">
+      <view class="tips-section">
+        <view class="tips-title">说明</view>
+        <view class="tips-content">
+          <text class="tip-item">• 人均价格：根据价格范围过滤推荐</text>
+          <text class="tip-item">• 搜索半径：搜索附近餐厅的范围</text>
+          <text class="tip-item">• 餐饮类型：筛选特定类型的餐厅</text>
+        </view>
+      </view>
+    </view>
+  </view>
 </view>
