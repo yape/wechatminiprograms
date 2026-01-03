@@ -59,6 +59,24 @@
         </view>
       </view>
       
+      <!-- CPS优惠券区域 -->
+      <view class="coupon-section" wx:if="{{result.coupon}}" bindtap="onCouponClick">
+        <view class="coupon-badge">🎁 专属优惠</view>
+        <view class="coupon-content">
+          <view class="coupon-info">
+            <text class="coupon-title">{{result.coupon.title}}</text>
+            <view class="coupon-price">
+              <text class="coupon-current">¥{{result.coupon.discountPrice}}</text>
+              <text class="coupon-original">¥{{result.coupon.originalPrice}}</text>
+            </view>
+          </view>
+          <view class="coupon-action">
+            <text class="coupon-discount">省{{result.coupon.discountPercent}}%</text>
+            <text class="coupon-btn">去领取 ›</text>
+          </view>
+        </view>
+      </view>
+      
       <view class="actions">
         <view class="btn secondary" bindtap="onReshuffle">换一个</view>
         <view class="btn primary" bindtap="onNavigate">去这里</view>

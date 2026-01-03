@@ -1,4 +1,5 @@
 const DIST_SCALE = 800; // 距离加权退火尺度，越小越偏向近处
+const DISCOUNT_WEIGHT = 0.5; // 优惠力度权重系数，值越大优惠券影响越大
 
 Page({
 
@@ -374,78 +375,55 @@ getSystemInfo() {
 
 
 
-  // 距离加权随机抽样，且避免与recentIds冲突（连续3次不重复）
-
+  // 距离+优惠力度加权随机抽样，且避免与recentIds冲突（连续3次不重复）
+  // 权重公式：w = 距离权重 * (1 + 优惠力度权重 * 优惠折扣百分比/100)
   pickOne(list) {
 
     if (!list || list.length === 0) return null;
 
-
-
     // 如果结果少于3个，不启用去重规则
-
     const enforceUnique = list.length >= 3;
-
     const recent = this.data.recentIds || [];
 
-
-
     // 生成候选与权重
-
     const candidates = [];
-
     for (const item of list) {
-
       const id = item.id || item.uid || `${item.location || ''}-${item.name || ''}`;
-
       if (enforceUnique && recent.includes(id)) {
-
         continue;
-
       }
-
       const d = Number(item.distance || 0);
-
-      const w = Math.exp(-(d / DIST_SCALE));
-
+      const discountScore = Number(item.discountScore || 0);
+      
+      // 距离权重
+      const distWeight = Math.exp(-(d / DIST_SCALE));
+      // 优惠力度加成：有优惠券的店铺权重提升
+      const discountBonus = 1 + DISCOUNT_WEIGHT * (discountScore / 100);
+      // 最终权重 = 距离权重 * 优惠加成
+      const w = distWeight * discountBonus;
+      
       candidates.push({ item: { ...item, id }, w });
-
     }
-
-
 
     // 如果因为去重导致候选为空，则放宽去重
-
     const pool = candidates.length > 0 ? candidates : list.map(it => {
-
       const id = it.id || it.uid || `${it.location || ''}-${it.name || ''}`;
-
       const d = Number(it.distance || 0);
-
-      const w = Math.exp(-(d / DIST_SCALE));
-
+      const discountScore = Number(it.discountScore || 0);
+      const distWeight = Math.exp(-(d / DIST_SCALE));
+      const discountBonus = 1 + DISCOUNT_WEIGHT * (discountScore / 100);
+      const w = distWeight * discountBonus;
       return { item: { ...it, id }, w };
-
     });
 
-
-
     // 归一化加权随机
-
     const total = pool.reduce((s, x) => s + (x.w || 0), 0) || 1;
-
     let r = Math.random() * total;
-
     for (const x of pool) {
-
       r -= x.w;
-
       if (r <= 0) return x.item;
-
     }
-
     return pool[pool.length - 1].item;
-
   },
 
 
@@ -573,6 +551,46 @@ getSystemInfo() {
       if (priceMin && cost < priceMin) return false;
       if (priceMax && priceMax < 9999 && cost > priceMax) return false;
       return true;
+    });
+  },
+
+  // 点击优惠券，跳转到大众点评小程序
+  onCouponClick() {
+    const { result } = this.data;
+    if (!result || !result.coupon) return;
+
+    // 大众点评小程序AppID
+    const dpAppId = 'wx23dde3ba32269caa';
+    
+    // 构建跳转路径（实际对接时使用真实的店铺ID和推广参数）
+    // 这里使用店铺名称搜索作为降级方案
+    const shopName = encodeURIComponent(result.name || '');
+    const path = `pages/shopdetail/shopdetail?shopName=${shopName}`;
+
+    wx.navigateToMiniProgram({
+      appId: dpAppId,
+      path: path,
+      extraData: {
+        source: 'eatingwhat',
+        shopName: result.name
+      },
+      success: () => {
+        console.log('跳转大众点评成功');
+      },
+      fail: (err) => {
+        console.error('跳转大众点评失败:', err);
+        // 降级方案：复制店铺名称
+        wx.setClipboardData({
+          data: result.name,
+          success: () => {
+            wx.showToast({
+              title: '店铺名已复制，请在大众点评搜索',
+              icon: 'none',
+              duration: 2000
+            });
+          }
+        });
+      }
     });
   }
 
