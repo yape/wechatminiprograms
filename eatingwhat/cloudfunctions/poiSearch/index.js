@@ -7,7 +7,7 @@ const querystring = require('querystring')
 
 cloud.init()
 
-const CPS_API_URL = 'https://cps-admin-client.pages.dev/api/public/promotions';
+const CPS_API_URL = 'https://xany.qzz.io/api/public/promotions';
 const CLIENT_SECRET = process.env.CPS_API_SECRET;
 
 // 全局缓存
