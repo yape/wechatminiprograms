@@ -135,8 +135,10 @@
     </view>
   </view>
 
+  <!-- 新增：更多优惠入口 -->
+  <view class="fab order0" bindtap="onOpenPromotions">🎁</view>
   <!-- 设置按钮 -->
-  <view class="fab" bindtap="onOpenSettings">⚙️</view>
+  <view class="fab order1" bindtap="onOpenSettings">⚙️</view>
 
   <!-- 侧边栏遮罩 -->
   <view class="sidebar-mask {{showSettings ? 'show' : ''}}" bindtap="onCloseSettings"></view>

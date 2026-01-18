@@ -1,0 +1,67 @@
+<view class="container">
+  <!-- 顶部 Tab -->
+  <view class="tabs" style="margin-top: {{statusBarHeight}}px;">
+    <view class="tab-item {{currentTab === 'recommend' ? 'active' : ''}}" bindtap="onTabChange" data-tab="recommend">
+      <text>周边好券</text>
+      <view class="tab-line" wx:if="{{currentTab === 'recommend'}}"></view>
+    </view>
+    <view class="tab-item {{currentTab === 'other' ? 'active' : ''}}" bindtap="onTabChange" data-tab="other">
+      <text>全网特惠</text>
+      <view class="tab-line" wx:if="{{currentTab === 'other'}}"></view>
+    </view>
+  </view>
+
+  <!-- 加载中 -->
+  <view wx:if="{{loading}}" class="loading-state">
+    <view class="loading-spinner"></view>
+    <text>正在加载优惠信息...</text>
+  </view>
+
+  <!-- 列表内容 -->
+  <scroll-view scroll-y class="content-scroll" wx:else>
+    <!-- 列表为空 -->
+    <view wx:if="{{currentList.length === 0}}" class="empty-state">
+      <image src="/images/empty.png" mode="aspectFit" class="empty-img"></image>
+      <text>暂无相关优惠活动</text>
+    </view>
+
+    <!-- 优惠列表 -->
+    <view class="promotion-list">
+      <block wx:for="{{currentList}}" wx:key="id">
+        <view class="promo-card" bindtap="onItemClick" data-item="{{item}}">
+          <image class="promo-img" src="{{item.image_url}}" mode="aspectFill" lazy-load></image>
+
+          <!-- 半透明遮罩层（或者用伪元素实现） -->
+          <view class="overlay"></view>
+
+          <view class="promo-info">
+            <view class="promo-title">{{item.title}}</view>
+            
+            <view class="promo-tags">
+              <text class="tag type-tag">{{item.tag === 'recommend' ? '周边' : '精选'}}</text>
+              <text class="tag discount-tag" wx:if="{{item.discountPercent}}">省{{item.discountPercent}}%</text>
+            </view>
+
+            <view class="promo-price-row">
+              <view class="price-info" wx:if="{{item.price != 0}}">
+                <text class="currency">¥</text>
+                <text class="current-price">{{item.price || '0'}}</text>
+                <text class="original-price" wx:if="{{item.originalPrice}}">¥{{item.originalPrice}}</text>
+              </view>
+              <button class="action-btn">去抢购</button>
+            </view>
+            
+            <!-- 销量/热度 -->
+            <view class="promo-footer" wx:if="{{item.sales}}">
+              <text class="sales-text">已售 {{item.sales}}</text>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+    
+    <view class="footer-tip">
+      <text>到底啦 ~</text>
+    </view>
+  </scroll-view>
+</view>

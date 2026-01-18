@@ -7,35 +7,62 @@ const querystring = require('querystring')
 
 cloud.init()
 
-// 模拟大众点评优惠券数据（后续替换为真实API）
-// 实际对接时，需要通过店铺名称+地址匹配大众点评店铺ID，再获取优惠券
-function mockDianpingCoupons(poiName, poiAddress) {
-  // 模拟30%的店铺有优惠券
-  const hasCoupon = Math.random() < 0.3;
-  if (!hasCoupon) return null;
+const CPS_API_URL = 'https://cps-admin-client.pages.dev/api/public/promotions';
+const CLIENT_SECRET = process.env.CPS_API_SECRET;
 
-  // 模拟不同类型的优惠券
-  const couponTypes = [
-    { type: 'discount', title: '满100减20', originalPrice: 100, discountPrice: 80, discountAmount: 20, discountPercent: 20 },
-    { type: 'discount', title: '满200减50', originalPrice: 200, discountPrice: 150, discountAmount: 50, discountPercent: 25 },
-    { type: 'discount', title: '满50减10', originalPrice: 50, discountPrice: 40, discountAmount: 10, discountPercent: 20 },
-    { type: 'groupon', title: '双人套餐', originalPrice: 168, discountPrice: 99, discountAmount: 69, discountPercent: 41 },
-    { type: 'groupon', title: '四人聚餐套餐', originalPrice: 358, discountPrice: 199, discountAmount: 159, discountPercent: 44 },
-    { type: 'groupon', title: '单人工作餐', originalPrice: 38, discountPrice: 19.9, discountAmount: 18.1, discountPercent: 48 },
-    { type: 'voucher', title: '代金券', originalPrice: 100, discountPrice: 80, discountAmount: 20, discountPercent: 20 },
-  ];
+// 全局缓存
+const cache = {
+  recommend: { data: null, time: 0 },
+  other: { data: null, time: 0 }
+};
+const CACHE_TTL = 10 * 60 * 1000; // 10分钟缓存
 
-  const coupon = couponTypes[Math.floor(Math.random() * couponTypes.length)];
+// 获取指定类型的推荐活动（带缓存）
+function getPromotionsByType(type = 'recommend') {
+  const now = Date.now();
+  const cacheKey = type;
   
-  return {
-    ...coupon,
-    // 模拟CPS链接（实际对接时替换为真实推广链接）
-    cpsLink: `https://m.dianping.com/shop/mock?name=${encodeURIComponent(poiName)}&source=miniapp`,
-    // 模拟点评店铺ID
-    dpShopId: 'mock_' + Math.random().toString(36).substr(2, 9),
-    // 券的有效期
-    expireDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  if (cache[cacheKey].data && (now - cache[cacheKey].time < CACHE_TTL)) {
+    return Promise.resolve(cache[cacheKey].data);
+  }
+
+  const params = {
+    type: type
+    // 不传 keyword 获取所有
   };
+  const qs = querystring.stringify(params);
+  const url = `${CPS_API_URL}?${qs}`;
+
+  return new Promise((resolve) => {
+    const options = {
+      headers: {
+        'x-client-secret': CLIENT_SECRET
+      }
+    };
+
+    https.get(url, options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => (data += chunk));
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(data);
+          if (json.data) {
+            cache[cacheKey].data = json.data;
+            cache[cacheKey].time = Date.now();
+            resolve(cache[cacheKey].data);
+          } else {
+            resolve([]);
+          }
+        } catch (e) {
+          console.error(`CPS API Parse Error (${type}):`, e);
+          resolve(cache[cacheKey].data || []); // 解析失败返回旧缓存或空
+        }
+      });
+    }).on('error', (err) => {
+      console.error(`CPS API Request Error (${type}):`, err);
+      resolve(cache[cacheKey].data || []); // 请求失败返回旧缓存或空
+    });
+  });
 }
 
 function requestAMap(params) {
@@ -75,54 +102,92 @@ function requestAMap(params) {
 }
 
 exports.main = async (event) => {
+  const { action } = event || {};
 
+  // Action: 获取所有优惠活动列表 (recommend + other)
+  if (action === 'getPromotions') {
+    try {
+      const [recommend, other] = await Promise.all([
+        getPromotionsByType('recommend'),
+        getPromotionsByType('other')
+      ]);
+      return {
+        code: 0,
+        data: {
+          recommend,
+          other
+        }
+      };
+    } catch (e) {
+      return { code: 500, message: e.message || '获取优惠活动失败' };
+    }
+  }
+
+  // Default Action: POI Search
   const { latitude, longitude, radius = 1500, types = '050000' } = event || {}
 
   if (!latitude || !longitude) {
-
     return { code: 400, message: '缺少定位信息' }
-
   }
 
   const key = process.env.GAODE_KEY
-
   const params = {
-
     key,
-
     location: `${longitude},${latitude}`,
-
     radius: String(radius),
-
     types,
-
     offset: '25',
-
     page: '1',
-
     extensions: 'all',
-
     sortrule: 'distance'
-
   }
 
-
-
   try {
-
-    const json = await requestAMap(params)
+    // 并行获取高德数据和CPS推荐数据(用于匹配)
+    const [json, promotions] = await Promise.all([
+      requestAMap(params),
+      getPromotionsByType('recommend')
+    ]);
 
     if (json.status !== '1') {
-
       return { code: 502, message: json.info || '高德接口调用失败', raw: json }
-
     }
 
     const pois = Array.isArray(json.pois) ? json.pois : []
 
+    // 在内存中匹配
     const mapped = pois.map((p) => {
-      // 获取优惠券信息
-      const coupon = mockDianpingCoupons(p.name, p.address);
+      // 匹配逻辑：poiName 包含 keyword
+      const hit = promotions.find(promo => promo.keyword && p.name.includes(promo.keyword));
+      
+      let coupon = null;
+      if (hit) {
+        // 解析原始数据尝试获取更多价格信息
+        let originalData = {};
+        try {
+          originalData = hit.original_data ? JSON.parse(hit.original_data) : {};
+        } catch(e) {}
+
+        const price = parseFloat(hit.price) || 0;
+        // 尝试从original_data获取原价，如果没有则假设原价更高一点或相等
+        const originalPrice = parseFloat(originalData.goods_price || originalData.original_price || price); 
+        
+        coupon = {
+          type: 'discount', // 默认为折扣券
+          title: hit.title,
+          originalPrice: originalPrice,
+          discountPrice: price,
+          discountAmount: Number((originalPrice - price).toFixed(2)),
+          discountPercent: originalPrice > 0 ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0,
+          
+          // 使用CPS链接
+          cpsLink: hit.click_url,
+          
+          // 附加字段
+          dpShopId: p.id, 
+          expireDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        };
+      }
       
       return {
         id: p.id,
@@ -138,20 +203,14 @@ exports.main = async (event) => {
         typeName: p.typecode ? p.type : '',
         // CPS优惠券信息
         coupon: coupon,
-        // 优惠力度分数（用于推荐权重计算）
+        // 优惠力度分数
         discountScore: coupon ? coupon.discountPercent : 0
       };
-    })
+    });
 
     return { code: 0, pois: mapped }
 
   } catch (e) {
-
     return { code: 500, message: e.message || '请求异常' }
-
   }
-
 }
-
-
-

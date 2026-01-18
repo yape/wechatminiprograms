@@ -194,6 +194,19 @@ getSystemInfo() {
   }
 },
 
+onOpenPromotions() {
+  wx.navigateTo({
+    url: '/pages/promotions/index',
+    fail: (err) => {
+      console.error("跳转失败", err);
+      wx.showToast({
+        title: '页面跳转失败',
+        icon: 'none'
+      })
+    }
+  })
+},
+
   onRadiusInput(e) {
 
     const v = Number(e.detail.value) || 1500;
