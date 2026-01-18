@@ -1,5 +1,6 @@
 {
   "navigationBarTitleText": "更多优惠",
+  "navigationStyle": "custom",
   "enablePullDownRefresh": true,
   "usingComponents": {}
 }

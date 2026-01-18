@@ -4,67 +4,48 @@ Page({
     recommendList: [],
     otherList: [],
     currentList: [],
-    loading: true
+    loading: true,
+    statusBarHeight: 20,
+    navBarHeight: 64
   },
 
-  // 新增：获取系统信息
-getSystemInfo() {
-  // 方法1：使用 wx.getSystemInfo 异步获取
-  wx.getSystemInfo({
-    success: (res) => {
-      const { statusBarHeight, platform } = res;
-      let navBarHeight = 44; // 导航栏内容区域高度
-      
-      // 根据不同平台设置高度
-      if (platform === 'android') {
-        navBarHeight = 48;
-      }
-      
-      // 计算总高度
-      const totalNavHeight = statusBarHeight + navBarHeight;
-      
-      this.setData({
-        statusBarHeight: statusBarHeight,
-        navBarHeight: totalNavHeight
-      });
-      
-      console.log('系统信息:', {
-        statusBarHeight,
-        platform,
-        navBarHeight: totalNavHeight
-      });
-    },
-    fail: (err) => {
-      console.error('获取系统信息失败:', err);
-      // 设置默认值
-      this.setData({
-        statusBarHeight: 20,
-        navBarHeight: 64
-      });
-    }
-  });
-  
-  // 方法2：或者使用 wx.getWindowInfo（新API）
-  if (wx.getWindowInfo) {
+  onLoad() {
+    this.getSystemInfo();
+    this.fetchPromotions();
+  },
+
+  getSystemInfo() {
     try {
       const windowInfo = wx.getWindowInfo();
       const statusBarHeight = windowInfo.statusBarHeight || 20;
-      const navBarHeight = statusBarHeight + 44; // 44是导航栏内容区默认高度
+      // 胶囊按钮位置信息
+      const menuButton = wx.getMenuButtonBoundingClientRect();
       
+      // 导航栏高度 = (胶囊顶部 - 状态栏高度) * 2 + 胶囊高度 + 状态栏高度
+      // 或者简单处理：状态栏高度 + 44 (iOS) / 48 (Android)
+      // 这里使用更精确的胶囊对齐方式
+      const navBarContentHeight = (menuButton.top - statusBarHeight) * 2 + menuButton.height;
+      const totalNavHeight = statusBarHeight + navBarContentHeight;
+
       this.setData({
-        statusBarHeight: statusBarHeight,
-        navBarHeight: navBarHeight
+        statusBarHeight,
+        navBarHeight: totalNavHeight
       });
     } catch (e) {
-      console.error('使用getWindowInfo失败:', e);
+      // 降级处理
+      wx.getSystemInfo({
+        success: (res) => {
+          const isAndroid = res.platform === 'android';
+          const statusBarHeight = res.statusBarHeight;
+          const navBarHeight = statusBarHeight + (isAndroid ? 48 : 44);
+          this.setData({ statusBarHeight, navBarHeight });
+        }
+      });
     }
-  }
-},
+  },
 
-  onLoad() {
-    // 获取系统信息，计算导航栏高度
-    this.getSystemInfo();
-    this.fetchPromotions();
+  onBack() {
+    wx.navigateBack();
   },
 
   // 切换 Tab
@@ -125,7 +106,10 @@ getSystemInfo() {
         originalData = item.original_data ? JSON.parse(item.original_data) : {};
       } catch (e) {}
 
-      const price = parseFloat(item.price) || 0;
+      const rawPrice = parseFloat(item.price);
+      const price = !isNaN(rawPrice) ? rawPrice : 0;
+      const hasPrice = price > 0.01; // 价格大于0才展示
+
       // 尝试从original_data获取原价，如果没有则假设原价更高一点或相等
       // 常见的原价字段：goods_price, original_price, market_price
       let originalPrice = parseFloat(originalData.goods_price || originalData.original_price || originalData.market_price || 0);
@@ -135,14 +119,15 @@ getSystemInfo() {
         originalPrice = price;
       }
 
-      const discountPercent = originalPrice > price 
+      const discountPercent = (hasPrice && originalPrice > price)
         ? Math.round(((originalPrice - price) / originalPrice) * 100) 
         : 0;
 
       return {
         ...item,
-        price: price.toFixed(2), // 格式化价格
-        originalPrice: originalPrice > price ? originalPrice.toFixed(2) : null,
+        hasPrice,
+        price: hasPrice ? price.toFixed(2) : '', 
+        originalPrice: (hasPrice && originalPrice > price) ? originalPrice.toFixed(2) : null,
         discountPercent: discountPercent > 0 ? discountPercent : null,
         originalDataObj: originalData
       };
